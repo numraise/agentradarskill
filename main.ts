@@ -2,6 +2,10 @@
  * Agent Guard — Hostile Mob Detector
  * Detect hostile mobs near the player and alert via chat
  * For Minecraft Education Edition 1.21.x
+ *
+ * ใช้ OLD execute syntax ของ Bedrock/Education Edition:
+ *   execute <entity> <x y z> <command>
+ * ไม่ใช่ new syntax (as/at/if/run) ที่ Education Edition ไม่รองรับ
  */
 
 //% color="#E63946"
@@ -83,6 +87,16 @@ namespace agentGuard {
         _r = r
     }
 
+    /**
+     * OLD Bedrock execute syntax:
+     *   execute <selector> <x> <y> <z> <command>
+     *
+     * วิธีทำงาน:
+     *   execute @e[type=zombie,r=10] ~ ~ ~ tell @p Found zombie!
+     *   = "สำหรับ zombie แต่ละตัวในระยะ 10 บล็อก
+     *      ให้ส่งข้อความ tell ไปหา player ที่ใกล้ที่สุด"
+     *   ถ้าไม่มี zombie ในระยะ = ไม่มีอะไรเกิดขึ้น
+     */
     function detectMobs(): void {
         let mobs = [
             "zombie", "skeleton", "creeper", "spider", "cave_spider",
@@ -94,7 +108,7 @@ namespace agentGuard {
         ]
         for (let i = 0; i < mobs.length; i++) {
             player.execute(
-                `execute at @s if entity @e[type=${mobs[i]},r=${_r}] run tell @s [Agent Guard] Found ${mobs[i]} within ${_r} blocks!`
+                `execute @e[type=${mobs[i]},r=${_r}] ~ ~ ~ tell @p [Agent Guard] Found ${mobs[i]} nearby!`
             )
         }
     }
