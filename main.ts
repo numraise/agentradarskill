@@ -3,22 +3,18 @@
  * Detect hostile mobs near the player and alert via chat
  * For Minecraft Education Edition 1.21.x
  *
- * FIX: ใช้ gameplay.runCommand() แทน player.execute()
- *   player.execute() ไม่ใช่ฟังก์ชันที่มีอยู่จริงใน MakeCode Minecraft API
- *   ทำให้เกิด TypeScript compile error → blocks ไม่แสดงใน toolbox
+ * การแก้ไข Bug:
+ *   BUG 1 (blocks ไม่แสดง): //% color="#E63946" ใส่ quotes → แก้เป็น //% color=#E63946
+ *   BUG 2 (compile error): gameplay.runCommand() ไม่ใช่ API ที่ถูกต้อง
+ *                          → ใช้ player.execute() ซึ่งเป็น Official MakeCode Minecraft API
  *
- * คำสั่ง execute ที่ใช้:
+ * คำสั่ง execute ที่ใช้ (OLD Bedrock syntax ที่ Education Edition รองรับ):
  *   execute @e[type=zombie,r=10] ~ ~ ~ tell @p [AgentGuard] พบ zombie!
- *   = ถ้ามี zombie อยู่ในระยะ r บล็อกรอบ @e (entity ใดก็ได้)
- *     → ส่ง tell ถึง player ที่ใกล้ที่สุด
+ *   = ถ้ามี zombie อยู่ในระยะ r บล็อก → ส่ง tell ถึง player ที่ใกล้ที่สุด
  *   ถ้าไม่มี mob ในระยะ = ไม่มีอะไรเกิดขึ้น
- *
- * ใช้ OLD execute syntax ของ Bedrock/Education Edition:
- *   execute <entity> <x y z> <command>
- * ไม่ใช่ new syntax (as/at/if/run) ที่ Education Edition ไม่รองรับ
  */
 
-//% color=#E63946 weight=100 icon="\uf21a"
+//% color=#E63946 weight=100
 namespace agentGuard {
 
     let _r = 10
@@ -100,14 +96,16 @@ namespace agentGuard {
     /**
      * Internal: run detection for all hostile mob types
      *
-     * ใช้ gameplay.runCommand() — วิธีที่ถูกต้องในการรัน Minecraft command
-     * จาก MakeCode TypeScript (แทน player.execute() ที่ไม่มีอยู่ใน API)
+     * player.execute(command) = Official MakeCode Minecraft API
+     * ทำงานเหมือน player พิมพ์ slash command ใน chat
      *
-     * execute format (OLD Bedrock syntax ที่ Education Edition รองรับ):
+     * execute format (OLD Bedrock syntax สำหรับ Education Edition):
      *   execute @e[type=<mob>,r=<radius>] ~ ~ ~ tell @p <message>
+     *
+     * หมายเหตุ: ใช้ tell @p แทน say เพื่อให้ข้อความส่งถึงแค่ผู้เล่นที่ใกล้ที่สุด
      */
     function detectMobs(): void {
-        let mobs = [
+        let mobList = [
             "zombie", "skeleton", "creeper", "spider", "cave_spider",
             "enderman", "witch", "drowned", "husk", "stray",
             "phantom", "pillager", "vindicator", "ravager",
@@ -115,11 +113,11 @@ namespace agentGuard {
             "slime", "elder_guardian", "guardian", "shulker",
             "warden", "bogged", "breeze"
         ]
-        for (let i = 0; i < mobs.length; i++) {
-            // gameplay.runCommand() คือ API ที่ถูกต้องใน MakeCode Minecraft
-            // (ตรงกับ block "run command" ใน category GAMEPLAY)
-            gameplay.runCommand(
-                `execute @e[type=${mobs[i]},r=${_r}] ~ ~ ~ tell @p [AgentGuard] พบ ${mobs[i]} ในระยะ ${_r} บล็อก!`
+        for (let i = 0; i < mobList.length; i++) {
+            // player.execute() = Official MakeCode Minecraft API
+            // (ดูที่ https://minecraft.makecode.com/reference/player/execute)
+            player.execute(
+                `execute @e[type=${mobList[i]},r=${_r}] ~ ~ ~ tell @p [AgentGuard] พบ ${mobList[i]} ในระยะ ${_r} บล็อก!`
             )
         }
     }
