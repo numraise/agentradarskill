@@ -3,12 +3,22 @@
  * Detect hostile mobs near the player and alert via chat
  * For Minecraft Education Edition 1.21.x
  *
+ * FIX: ใช้ gameplay.runCommand() แทน player.execute()
+ *   player.execute() ไม่ใช่ฟังก์ชันที่มีอยู่จริงใน MakeCode Minecraft API
+ *   ทำให้เกิด TypeScript compile error → blocks ไม่แสดงใน toolbox
+ *
+ * คำสั่ง execute ที่ใช้:
+ *   execute @e[type=zombie,r=10] ~ ~ ~ tell @p [AgentGuard] พบ zombie!
+ *   = ถ้ามี zombie อยู่ในระยะ r บล็อกรอบ @e (entity ใดก็ได้)
+ *     → ส่ง tell ถึง player ที่ใกล้ที่สุด
+ *   ถ้าไม่มี mob ในระยะ = ไม่มีอะไรเกิดขึ้น
+ *
  * ใช้ OLD execute syntax ของ Bedrock/Education Edition:
  *   execute <entity> <x y z> <command>
  * ไม่ใช่ new syntax (as/at/if/run) ที่ Education Edition ไม่รองรับ
  */
 
-//% color="#E63946"
+//% color=#E63946 weight=100 icon="\uf21a"
 namespace agentGuard {
 
     let _r = 10
@@ -88,14 +98,13 @@ namespace agentGuard {
     }
 
     /**
-     * OLD Bedrock execute syntax:
-     *   execute <selector> <x> <y> <z> <command>
+     * Internal: run detection for all hostile mob types
      *
-     * วิธีทำงาน:
-     *   execute @e[type=zombie,r=10] ~ ~ ~ tell @p Found zombie!
-     *   = "สำหรับ zombie แต่ละตัวในระยะ 10 บล็อก
-     *      ให้ส่งข้อความ tell ไปหา player ที่ใกล้ที่สุด"
-     *   ถ้าไม่มี zombie ในระยะ = ไม่มีอะไรเกิดขึ้น
+     * ใช้ gameplay.runCommand() — วิธีที่ถูกต้องในการรัน Minecraft command
+     * จาก MakeCode TypeScript (แทน player.execute() ที่ไม่มีอยู่ใน API)
+     *
+     * execute format (OLD Bedrock syntax ที่ Education Edition รองรับ):
+     *   execute @e[type=<mob>,r=<radius>] ~ ~ ~ tell @p <message>
      */
     function detectMobs(): void {
         let mobs = [
@@ -107,8 +116,10 @@ namespace agentGuard {
             "warden", "bogged", "breeze"
         ]
         for (let i = 0; i < mobs.length; i++) {
-            player.execute(
-                `execute @e[type=${mobs[i]},r=${_r}] ~ ~ ~ say Agent Guard - Found ${mobs[i]} within ${_r} blocks`
+            // gameplay.runCommand() คือ API ที่ถูกต้องใน MakeCode Minecraft
+            // (ตรงกับ block "run command" ใน category GAMEPLAY)
+            gameplay.runCommand(
+                `execute @e[type=${mobs[i]},r=${_r}] ~ ~ ~ tell @p [AgentGuard] พบ ${mobs[i]} ในระยะ ${_r} บล็อก!`
             )
         }
     }
