@@ -1,0 +1,17 @@
+{
+    "name": "agent-guard",
+    "description": "ตรวจจับ hostile mob ในระยะที่กำหนดรอบตัวผู้เล่น แล้วให้ agent แจ้งเตือนผ่านแชท สำหรับ Minecraft Education Edition",
+    "version": "1.0.0",
+    "license": "MIT",
+    "dependencies": {},
+    "files": [
+        "main.ts",
+        "README.md"
+    ],
+    "testFiles": [],
+    "public": true,
+    "supportedTargets": [
+        "minecraft"
+    ],
+    "languageRestriction": "javascript"
+}
