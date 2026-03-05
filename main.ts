@@ -3,22 +3,18 @@
  * Detect hostile mobs near the player and alert via chat
  * For Minecraft Education Edition 1.21.x
  *
- * การแก้ไข Bug ทั้งหมด:
- *   BUG 1: //% color="#E63946" ใส่ quotes → blocks ไม่แสดง
- *          FIX: //% color=#E63946 (ไม่มี quotes)
+ * ROOT CAUSE ของ compile error ที่แท้จริง:
+ *   mobs.execute() → parameter 1 = TargetSelector type (ไม่ใช่ string)
+ *   ❌ mobs.execute("@e[type=zombie,r=10]", ...)
+ *      Error: Argument of type 'string' is not assignable to type 'TargetSelector'
  *
- *   BUG 2: player.execute() และ gameplay.runCommand() ไม่ใช่ API ที่ถูกต้อง
- *          FIX: ใช้ mobs.execute(target, position, command)
- *          → Official MakeCode API: minecraft.makecode.com/reference/mobs/execute
+ *   player.execute() → parameter = string type ✅
+ *   ✅ player.execute("execute @e[family=monster,r=10] ~ ~ ~ tell @p ...")
+ *      รัน Minecraft command โดยตรงในฐานะ player — ไม่มี type mismatch
  *
- *   BUG 3: Template literals อาจเป็นปัญหาใน PXT บางเวอร์ชัน
- *          FIX: ใช้ string concatenation แทน
- *
- * mobs.execute() ทำงานอย่างไร:
- *   mobs.execute("@e[type=zombie,r=10]", pos(0,0,0), "tell @p found!")
- *   = execute @e[type=zombie,r=10] ~ ~ ~ tell @p found!
- *   ถ้ามี zombie ในระยะ r บล็อก → ส่ง tell ถึง player ที่ใกล้ที่สุด
- *   ถ้าไม่มี → ไม่มีอะไรเกิดขึ้น
+ * ทำไมใช้ family=monster แทน loop 27 mob types:
+ *   family=monster = selector ที่จับ hostile mob ทุกประเภทในครั้งเดียว
+ *   ลด execute commands จาก 27 ครั้ง → 1 ครั้ง
  */
 
 //% color=#E63946 weight=100
@@ -43,7 +39,7 @@ namespace agentGuard {
         _on = true
         if (!_ran) {
             _ran = true
-            loops.forever(() => {
+            loops.forever(function () {
                 if (_on) {
                     detectMobs()
                 }
@@ -101,31 +97,24 @@ namespace agentGuard {
     }
 
     /**
-     * Internal: detect hostile mobs using mobs.execute()
+     * Internal: detect all hostile mobs using player.execute()
      *
-     * mobs.execute(target, position, command):
-     *   - target: entity selector string "@e[type=zombie,r=10]"
-     *   - position: pos(0,0,0) = relative ~ ~ ~ from entity
-     *   - command: "tell @p message" = tell nearest player
+     * player.execute(command: string) ← parameter type = string ✅
+     * ไม่เหมือน mobs.execute() ที่ต้องการ TargetSelector type
      *
-     * Official API: https://minecraft.makecode.com/reference/mobs/execute
-     * Using string concatenation (not template literals) for max compatibility
+     * family=monster = Bedrock/Education Edition selector
+     * จับ hostile mob ทุกประเภทในครั้งเดียว
+     *
+     * Command flow:
+     *   player.execute("execute @e[family=monster,r=10] ~ ~ ~ tell @p ...")
+     *   → player รัน execute command
+     *   → ถ้ามี hostile mob ในระยะ r → mob ส่ง tell ถึง @p (nearest player)
+     *   → ถ้าไม่มี mob → ไม่มีอะไรเกิดขึ้น
      */
     function detectMobs(): void {
-        let mobList = [
-            "zombie", "skeleton", "creeper", "spider", "cave_spider",
-            "enderman", "witch", "drowned", "husk", "stray",
-            "phantom", "pillager", "vindicator", "ravager",
-            "evoker", "vex", "blaze", "ghast", "magma_cube",
-            "slime", "elder_guardian", "guardian", "shulker",
-            "warden", "bogged", "breeze"
-        ]
-        for (let i = 0; i < mobList.length; i++) {
-            mobs.execute(
-                "@e[type=" + mobList[i] + ",r=" + _r + "]",
-                pos(0, 0, 0),
-                "tell @p [AgentGuard] " + mobList[i] + " (" + _r + " blocks!)"
-            )
-        }
+        player.execute(
+            "execute @e[family=monster,r=" + _r + "] ~ ~ ~ tell @p [AgentGuard] " +
+            "ตรวจพบ hostile mob ในระยะ " + _r + " บล็อก!"
+        )
     }
 }
