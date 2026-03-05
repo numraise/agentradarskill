@@ -1,11 +1,7 @@
 /**
  * Agent Guard Extension สำหรับ Minecraft Education Edition 1.21.x
- * ======================================================================
- * ฟังก์ชัน:
- *   - ตรวจจับ hostile mob ในระยะที่กำหนดรอบตัวผู้เล่นแต่ละคน
- *   - ส่งข้อความแจ้งเตือนผ่านแชทไปยังผู้เล่นที่พบ mob
- *   - รองรับการเปิด/ปิด และปรับระยะ+ความถี่ได้ขณะ runtime
- * ======================================================================
+ * ตรวจจับ hostile mob ในระยะที่กำหนดรอบตัวผู้เล่น
+ * และส่งข้อความแจ้งเตือนผ่านแชทอัตโนมัติ
  */
 
 //% color="#E63946"
@@ -14,14 +10,12 @@
 //% weight=100
 namespace agentGuard {
 
-    // ---- ตัวแปร internal ----
     let _radius: number = 10;
     let _intervalMs: number = 5000;
     let _isActive: boolean = false;
     let _loopStarted: boolean = false;
 
-    // รายชื่อ hostile mob ทั้งหมดใน Minecraft Education 1.21
-    // (หาก mob ไม่มีในโลก คำสั่งจะ fail เงียบๆ ไม่ error)
+    // รายชื่อ hostile mob ใน Minecraft Education 1.21
     let HOSTILE_MOBS: string[] = [
         "zombie",
         "skeleton",
@@ -51,12 +45,8 @@ namespace agentGuard {
         "breeze"
     ];
 
-    // ================================================================
-    //  กลุ่ม: การควบคุม
-    // ================================================================
-
     /**
-     * เริ่มโหมดเฝ้าระวัง — ตรวจจับ hostile mob รอบผู้เล่นอัตโนมัติ
+     * เริ่มโหมดเฝ้าระวัง ตรวจจับ hostile mob รอบผู้เล่นอัตโนมัติ
      * @param radius ระยะตรวจจับ (บล็อก) eg: 10
      */
     //% blockId="agentguard_start"
@@ -67,8 +57,6 @@ namespace agentGuard {
     export function startGuarding(radius: number): void {
         _radius = radius;
         _isActive = true;
-
-        // สร้าง loop เพียงครั้งเดียวเพื่อป้องกัน loop ซ้ำซ้อน
         if (!_loopStarted) {
             _loopStarted = true;
             loops.forever(function () {
@@ -81,7 +69,7 @@ namespace agentGuard {
     }
 
     /**
-     * หยุดการตรวจจับ (หยุดชั่วคราว ไม่ต้อง reload)
+     * หยุดการตรวจจับชั่วคราว
      */
     //% blockId="agentguard_stop"
     //% block="หยุดการตรวจจับ"
@@ -92,7 +80,7 @@ namespace agentGuard {
     }
 
     /**
-     * ตรวจสอบ hostile mob ทันที 1 ครั้ง (ไม่ต้องเปิด loop)
+     * ตรวจสอบ hostile mob ทันที 1 ครั้ง
      */
     //% blockId="agentguard_checkOnce"
     //% block="ตรวจสอบ hostile mob ทันที"
@@ -102,12 +90,8 @@ namespace agentGuard {
         _scanAllMobs();
     }
 
-    // ================================================================
-    //  กลุ่ม: การตั้งค่า
-    // ================================================================
-
     /**
-     * กำหนดความถี่การตรวจสอบ
+     * ตั้งค่าความถี่การตรวจสอบ
      * @param seconds ทุกกี่วินาที eg: 5
      */
     //% blockId="agentguard_setInterval"
@@ -120,7 +104,7 @@ namespace agentGuard {
     }
 
     /**
-     * เปลี่ยนระยะตรวจจับขณะ loop กำลังทำงานได้
+     * เปลี่ยนระยะตรวจจับ
      * @param radius ระยะ (บล็อก) eg: 10
      */
     //% blockId="agentguard_setRadius"
@@ -132,12 +116,8 @@ namespace agentGuard {
         _radius = radius;
     }
 
-    // ================================================================
-    //  กลุ่ม: สถานะ
-    // ================================================================
-
     /**
-     * คืนค่า true ถ้าโหมดเฝ้าระวังกำลังทำงานอยู่
+     * ตรวจสอบว่าโหมดเฝ้าระวังทำงานอยู่หรือเปล่า
      */
     //% blockId="agentguard_isActive"
     //% block="โหมดเฝ้าระวังกำลังทำงาน"
@@ -147,41 +127,19 @@ namespace agentGuard {
         return _isActive;
     }
 
-    // ================================================================
-    //  ฟังก์ชัน internal
-    // ================================================================
-
-    /**
-     * วนสแกน hostile mob ทุกประเภท
-     *
-     * หลักการ:
-     *   /execute as @a at @s
-     *     -> ทำงาน "ในฐานะ" ผู้เล่นแต่ละคน "ที่ตำแหน่ง" ของเขา
-     *   if entity @e[type=<mob>,r=<radius>]
-     *     -> ถ้าพบ mob ชนิดนั้นในรัศมี (วัดจากตำแหน่งผู้เล่น)
-     *   run tellraw @s {...}
-     *     -> ส่งข้อความหาผู้เล่นคนนั้น (@s) เท่านั้น
-     */
+    // ฟังก์ชัน internal: วนสแกน mob ทุกชนิด
     function _scanAllMobs(): void {
         for (let i = 0; i < HOSTILE_MOBS.length; i++) {
-            const mob: string = HOSTILE_MOBS[i];
-
-            // สร้าง JSON message สำหรับ tellraw
-            // รูปแบบ: {"rawtext":[{"text":"ข้อความ"}]}
-            const jsonMsg: string =
-                "{\"rawtext\":[{\"text\":\"" +
-                "!! [Agent Guard] " +
+            let mob: string = HOSTILE_MOBS[i];
+            let jsonMsg: string =
+                "{\"rawtext\":[{\"text\":\"!! [Agent Guard] " +
                 "พบ " + mob + " " +
-                "ในระยะ " + _radius + " บล็อก! " +
-                "ระวังด้วย!" +
+                "ในระยะ " + _radius + " บล็อก! ระวังด้วย!" +
                 "\"}]}";
-
-            // รวม command เต็ม
-            const cmd: string =
+            let cmd: string =
                 "/execute as @a at @s " +
                 "if entity @e[type=" + mob + ",r=" + _radius + "] " +
                 "run tellraw @s " + jsonMsg;
-
             gameplay.executeCommand(cmd);
         }
     }
