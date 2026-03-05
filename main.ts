@@ -1,11 +1,7 @@
 /**
  * Agent Guard — Hostile Mob Detector
- * Detect hostile mobs near the player and alert via chat
  * For Minecraft Education Edition 1.21.x
- *
- * ใช้ OLD execute syntax ของ Bedrock/Education Edition:
- *   execute <entity> <x y z> <command>
- * ไม่ใช่ new syntax (as/at/if/run) ที่ Education Edition ไม่รองรับ
+ * ใช้ OLD execute syntax ของ Bedrock/Education Edition
  */
 
 //% color="#E63946"
@@ -16,10 +12,6 @@ namespace agentGuard {
     let _ran = false
     let _ms = 5000
 
-    /**
-     * Start guard mode - continuously detect hostile mobs
-     * @param r detection radius in blocks, eg: 10
-     */
     //% blockId="agentguard_start"
     //% block="เริ่มตรวจจับ hostile mob ระยะ %r บล็อก"
     //% r.min=1 r.max=64 r.defl=10
@@ -39,9 +31,6 @@ namespace agentGuard {
         }
     }
 
-    /**
-     * Stop guard mode
-     */
     //% blockId="agentguard_stop"
     //% block="หยุดการตรวจจับ"
     //% group="Control"
@@ -50,9 +39,6 @@ namespace agentGuard {
         _on = false
     }
 
-    /**
-     * Check for hostile mobs once
-     */
     //% blockId="agentguard_once"
     //% block="ตรวจสอบ hostile mob ทันที"
     //% group="Control"
@@ -61,10 +47,6 @@ namespace agentGuard {
         detectMobs()
     }
 
-    /**
-     * Set check frequency
-     * @param sec interval in seconds, eg: 5
-     */
     //% blockId="agentguard_freq"
     //% block="ตรวจสอบทุก %sec วินาที"
     //% sec.min=1 sec.max=60 sec.defl=5
@@ -74,10 +56,6 @@ namespace agentGuard {
         _ms = sec * 1000
     }
 
-    /**
-     * Set detection radius
-     * @param r radius in blocks, eg: 10
-     */
     //% blockId="agentguard_radius"
     //% block="ตั้งระยะตรวจจับ %r บล็อก"
     //% r.min=1 r.max=64 r.defl=10
@@ -87,16 +65,6 @@ namespace agentGuard {
         _r = r
     }
 
-    /**
-     * OLD Bedrock execute syntax:
-     *   execute <selector> <x> <y> <z> <command>
-     *
-     * วิธีทำงาน:
-     *   execute @e[type=zombie,r=10] ~ ~ ~ tell @p Found zombie!
-     *   = "สำหรับ zombie แต่ละตัวในระยะ 10 บล็อก
-     *      ให้ส่งข้อความ tell ไปหา player ที่ใกล้ที่สุด"
-     *   ถ้าไม่มี zombie ในระยะ = ไม่มีอะไรเกิดขึ้น
-     */
     function detectMobs(): void {
         let mobs = [
             "zombie", "skeleton", "creeper", "spider", "cave_spider",
