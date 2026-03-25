@@ -9,6 +9,10 @@ namespace agentGuard {
     let _radius = 10
     let _initialized = false
 
+    function detectMobs(): void {
+        gameplay.execute(`/execute if entity @e[family=monster,r=${_radius}] run tell @s §c[AgentGuard] §fพบมอนสเตอร์ในระยะ ${_radius} บล็อก!`)
+    }
+
     /**
      * เริ่มตรวจจับ hostile mob (ทำงานได้ทุกคนแม้ไม่ใช่ OP)
      * @param r ระยะตรวจจับ (บล็อก), eg: 10
@@ -28,13 +32,9 @@ namespace agentGuard {
         // ใช้ loops.forever: วิธีที่ Member ใช้งานได้เสถียรที่สุด 100%
         loops.forever(function () {
             if (_active) {
-                // ใช้การเช็คระยะผ่านระบบภายในของ MakeCode (Member ใช้ได้)
-                // ไม่ใช้ /execute เพื่อหลีกเลี่ยงสิทธิ์ OP
-                const nearby = mobs.entitiesNearby(MONSTER, _radius)
-                if (nearby.length > 0) {
-                    // แจ้งเตือนผ่าน player.say (Member ใช้ได้ชัวร์)
-                    player.say("§c[AgentGuard] §fพบมอนสเตอร์ในระยะ " + _radius + " บล็อก!")
-                }
+                // ใช้ /execute if entity เพื่อตรวจจับ hostile mob ในระยะที่กำหนด
+                // คำสั่งจะส่งข้อความเฉพาะเมื่อพบมอนสเตอร์จริงเท่านั้น
+                detectMobs()
             }
             // ตรวจสอบทุก 5 วินาที เพื่อไม่ให้แชทรัวเกินไป
             loops.pause(5000)
@@ -58,11 +58,7 @@ namespace agentGuard {
     //% block="ตรวจสอบ hostile mob ทันที"
     //% weight=80
     export function checkOnce(): void {
-        const nearby = mobs.entitiesNearby(MONSTER, _radius)
-        if (nearby.length > 0) {
-            player.say("§c[AgentGuard] §fพบมอนสเตอร์ในระยะ " + _radius + " บล็อก!")
-        } else {
-            player.say("§a[AgentGuard] §fพื้นที่รอบตัวปลอดภัย")
-        }
+        detectMobs()
+        gameplay.execute(`/execute unless entity @e[family=monster,r=${_radius}] run tell @s §a[AgentGuard] §fพื้นที่รอบตัวปลอดภัย`)
     }
 }
